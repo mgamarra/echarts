@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<meta charset="UTF-8">
+    <title>我的ECharts</title>
+    
+	<!-- echarts需引入的js、采用模块化单文件自动引入     -->
+	<script type="text/javascript" src="echarts-2.1.8/js/echarts.js" ></script>  
+	<script type="text/javascript" src="jquery/jquery-1.9.1.min.js"></script>
+  </head>
+  <body>
+
+	<!-- echarts柱状图HTML容器，注意容器div必须设置高度值 -->
+	<div id="hw_record_bar_chart"  style="height: 350px; width: 100%;">
+	</div>  
+	<script type="text/javascript">
+			
+			//echarts 柱状图初始化、显示处理  js
+			
+			//初始化总入口
+			$(function(){
+			    initEchartConfig();        //初始化echart图形，其中成绩详情饼图、个人学习时长折线图、作业轨迹柱状图、测试轨迹柱状图
+			}); 
+			
+			/**
+			 * 通过模块化单文件引入方式引入echart图形插件中具体的图形js
+			 */
+			function initEchartConfig(){
+			    
+			    // 为模块加载器配置echarts的路径，从当前页面链接到echarts.js，定义所需图表路径
+			    require.config({
+			        paths:{
+			            echarts: './echarts_2.1.8/js'
+			        }
+			    });
+			    
+			    // 动态加载echarts然后在回调函数中开始使用，注意保持按需加载结构定义图表路径
+			    require(
+			        [
+			            'echarts',
+			            'echarts/chart/line',
+			            'echarts/chart/bar',
+			            'echarts/chart/pie'
+			        ],
+			        statisticsCallback
+			    );
+			}
+			
+			/**
+			 * echart统计总回调函数
+			 */
+			function statisticsCallback(ec){
+			    stuHwRecordBar(ec);
+			} 
+			
+			/**
+			 * <li>echarts 柱状图处理功能方法</li>
+			 * <li>处理echarts 柱状图 x 轴数据显示根据柱子间隔距离自动换行显示</li>
+			 * @param title                将要换行处理x轴值
+			 * @param barContainerWidth    柱状图初始化所在的外层容器的宽度
+			 * @param xWidth            柱状图x轴左边的空白间隙 x 的值，详见echarts文档中grid属性，默认80
+			 * @param x2Width            柱状图x轴邮编的空白间隙     x2 的值，详见echarts文档中grid属性，默认80
+			 * @param insertContent        每次截取后要拼接插入的内容， 不传则默认为换行符：\n
+			 * @returns titleStr        截取拼接指定内容后的完整字符串
+			 * @author lixin
+			 */
+			function getEchartBarXAxisTitle(title, datas, barContainerWidth, xWidth, x2Width, insertContent){
+			    
+			    if(!title || title.length == 0) {
+			        alert("截取拼接的参数值不能为空！");return false;
+			    }
+			    if(!datas || datas.length == 0) {
+			        alert("用于计算柱状图柱子个数的参数datas不合法！"); return false;
+			    }
+			    if(isNaN(barContainerWidth)) {
+			        alert("柱状图初始化所在的容器的宽度不是一个数字");return false;
+			    }
+			    if(isNaN(xWidth)) {
+			        xWidth = 80;//默认与echarts的默认值一致
+			    }
+			    if(isNaN(x2Width)) {
+			        xWidth = 80;//默认与echarts的默认值一致
+			    }
+			    if(!insertContent) {
+			        insertContent = "\n";
+			    }
+			    
+			    var xAxisWidth =  parseInt(barContainerWidth) - (parseInt(xWidth) + parseInt(x2Width)) - 10;//柱状图x轴宽度=统计页面宽度-柱状图x轴的空白间隙(x + x2)，为了每个标题显示留点间隙，故多减去10个像素
+			    var barCount = datas.length;                                //柱子的个数（即为获取的数据的条数）
+			    var preBarWidth = Math.floor(xAxisWidth / barCount);        //统计柱状图每个柱子x轴的间隔
+			    var preBarFontCount = Math.floor((preBarWidth - 6) / 12) ;    //柱状图每个柱x轴间隔能容纳的字数 = 每个柱子x轴间隔宽度 / 每个字的宽度（12px） - 6（为多标题间显示间隔）
+			    
+			    var newTitle = "";        //拼接每次截取的内容，知道最好为完整的值
+			    var titleSuf = "";        //用于存放每次截取后剩下的部分
+			    var rowCount = Math.ceil(title.length / preBarFontCount);    //标题需要换行的次数 
+			    
+			    if(rowCount > 1) {                            //标题字数大于柱状图每个柱子x轴间隔所能容纳的字数，则将标题换行
+			        for(var j = 1; j <= rowCount; j++) {
+			            if(j == 1) {
+			                
+			                newTitle += title.substring(0, preBarFontCount) + insertContent;
+			                titleSuf = title.substring(preBarFontCount);    //存放将截取后剩下的部分，便于下次循环从这剩下的部分中又从头截取固定长度
+			            } else {
+			                
+			                var startIndex = 0;
+			                var endIndex = preBarFontCount;
+			                if(titleSuf.length > preBarFontCount) {    //检查截取后剩下的部分的长度是否大于柱状图单个柱子间隔所容纳的字数
+			                    
+			                    newTitle += titleSuf.substring(startIndex, endIndex) + insertContent;
+			                    titleSuf = titleSuf.substring(endIndex);    //更新截取后剩下的部分，便于下次继续从这剩下的部分中截取固定长度
+			                } else if(titleSuf.length > 0){
+			                    newTitle += titleSuf.substring(startIndex);
+			                }
+			            }
+			        }
+			    } else {
+			        newTitle = title;
+			    }
+			    return newTitle;
+			}
+			/**
+			 * 获取学生作业轨迹数据（json）
+			 */
+			function getHomeworkRecord(){
+			    var xAxisData = [];
+			    var seriesData = [];
+			    $.ajax({
+			        url: basePath + '/course/statistics/courseStatisticsStudent_getHomeworkRecord.action',
+			        data: {courseId: courseId, loginId: loginId},
+			        type: 'post',
+			        dataType: 'json',
+			        async: false,
+			        cache: false,
+			        success: function(data){    //成功：{success: true, result: 结果}；失败：{success: false, errorCause: 错误原因}
+			            if(data.success && data.result) {
+			                var res = data.result;
+			                $(res).each(function(i, obj) {
+			                    
+			                    var hwTitle = this.homeworkInfo.title;
+			                    var newHwTitle = getEchartBarXAxisTitle(hwTitle, res, 983, 30, 30, "\n");    //处理标题，使其根据柱状图x轴每个柱子的间隔距离自动换行
+			                    xAxisData.push(newHwTitle);
+			                    if(this.totalScore == "0") {
+			                        seriesData.push({
+			                            value: "未做",
+			                            itemStyle: {normal: {color: 'red'}},
+			                        });
+			                    } else {
+			                        seriesData.push(this.totalScore);
+			                    }
+			                });
+			            }
+			        },
+			        error: function(){alert("请求失败，请刷新重试或联系管理员！");}
+			    });
+			    return {xData: xAxisData, seriesData: seriesData};
+			}
+			
+			/**
+			 * 学生作业轨迹柱状图
+			 * @param ec echarts实例
+			 */
+			function stuHwRecordBar(ec){
+			    
+			    var hwBarChart = ec.init(document.getElementById('hw_record_bar_chart'));
+			    hwBarChart.showLoading({
+			        text: '正在努力的读取数据中...'    //loading话术
+			    });
+			    
+			    //var _data = getHomeworkRecord();
+			    /* 
+			    var xAxisData = _data.xData;
+			    var seriesData = _data.seriesData;
+			     */
+			    var xAxisData = ['科目1', '科目2', '科目3', '科目4', '科目5'];
+				var seriesData = [10, 20, 30, 40, 50];
+			    if(seriesData == null || seriesData.length == 0) {
+			        $("#hw_record_bar_chart").text("您没有作业记录信息！");
+			        $("#hw_remind").text("");
+			        return false;
+			    }
+			    
+			    hwBarChart.hideLoading();
+			    hwBarChart.setOption({
+			        tooltip : {
+			            trigger: 'axis',
+			            axisPointer: {
+			                type : 'line',
+			                lineStyle : {
+			                    color: 'red',
+			                    width: 2,
+			                    type: 'solid'
+			                },
+			            }
+			        },
+			        grid: {
+			            x: 30,
+			            y: 30,
+			            x2: 30,
+			            y2: 60,
+			            height: 260
+			        },
+			        calculable : false,    //{boolean} false，是否启用拖拽重计算特性，默认关闭
+			        xAxis : [
+			            {
+			                name : '标题',
+			                type : 'category',
+			                splitLine : {show: true, lineStyle: {color: ['#EEEEEE'], width: 1, type: 'solid'}},
+			                axisLabel : {
+			                    interval: 0, 
+			                    rotate: 0, 
+			                    textStyle: {
+			                        //color: '#5AB1EF', 
+			                         fontFamily: '宋体',
+			                        /*fontWeight: 'bold'*/
+			                        baseline: 'top'
+			                    },
+			                    formatter: function(value){
+			                        
+			                        /*if(value && value.length > 8) {
+			                            return value.substring(0, 8)+"\n"+value.substring(8, value.length);
+			                        }*/
+			                        return value;
+			                    }     
+			                },
+			                data : xAxisData
+
+			            }
+			        ],
+			        yAxis : [
+			            {
+			                name : '分数',
+			                type : 'value',
+			                splitArea : {show: true, areaStyle: {color: ['rgba(250,250,250,0.3)','rgba(240,240,240,0.5)']}},
+			                splitLine : {show: true, lineStyle: {color: ['#EEEEEE'], width: 1, type: 'solid'}},
+			                splitNumber : 5,
+			                min: 0,
+			                max: 100
+			            }
+			        ],
+			        series : [
+			            {
+			                name:'分数',
+			                type:'bar',
+			                barWidth: 20,
+			                itemStyle: {
+			                    normal: {
+			                        color: '#5AB1EF',
+			                        label:{
+			                            show:true,
+			                            position:'top',
+			                            textStyle:{
+			                                fontSize:12
+			                                //color:"#5AB1EF"
+			                            },
+			                            formatter: function(a, b, c){
+			                                if(c != "未做") {
+			                                    return c+"分";
+			                                }
+			                                return c;
+			                            }
+			                        }
+			                    }
+			                },
+			                data: seriesData
+			            }
+			        ]
+			    });
+			}
+			
+		</script>
+	</body>
+</html>
+

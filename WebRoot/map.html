@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<meta charset="UTF-8">
+    <title>我的ECharts</title>
+    <script src="echarts-2.1.8/js/echarts.js" ></script>
+    
+  </head>
+  
+  <body>
+  	 
+	  <!-- 为ECharts准备一个具备大小(宽高)的Dom -->
+	  <div id="main" style="height: 400px;"></div>
+	  <script type="text/javascript">
+	  	//路径配置
+	  	require.config({
+	  		paths:{
+	  			'echarts':'./echarts-2.1.8/js'
+	  		}
+	  	});
+	
+	  	//使用
+	  	require(
+			[
+				'echarts',
+				'echarts/chart/bar',//使用柱状图就加载bar模块,按需加载
+				'echarts/chart/line',
+				'echarts/chart/pie'
+			],
+			function(ec){
+				//基于准备好的dom,初始化echarts图表
+				var myChart = ec.init(document.getElementById('main'));
+				var option = {
+                    tooltip: {
+                        show: true,
+                        trigger : 'axis'
+                    },
+                    calculable:false,
+                    legend: {
+                        data:['销量','价格']
+                    },
+                    toolbox:{
+                    	show:true,
+                    	orient: 'horizontal', 
+                    	backgroundColor: 'rgba(0,0,0,0)',
+                    	showTitle: true,
+                    	feature:{
+                    		mark:{
+                    	        show : true,
+                    	        title : {
+                    	            mark : '辅助线开关',
+                    	            markUndo : '删除辅助线',
+                    	            markClear : '清空辅助线'
+                    	        },
+                    	        lineStyle : {
+                    	            width : 2,
+                    	            color : '#1e90ff',
+                    	            type : 'dashed'
+                    	        }
+                    	    },
+                    	    dataZoom:{
+                    	        show : true,
+                    	        title : {
+                    	            dataZoom : '区域缩放',
+                    	            dataZoomReset : '区域缩放后退'
+                    	        }
+                    	    },
+                    	    dataView : {
+                                show : true,
+                                title : '数据视图',
+                                readOnly: false,
+                                lang : ['数据视图', '关闭', '刷新']
+                            }
+                    	}
+                    },
+                    xAxis : [
+                        {
+                            type : 'category',
+                            data : ["衬衫","羊毛衫","雪纺衫","裤子","高跟鞋","袜子"]
+                        }
+                    ],
+                    yAxis : [ 
+                        {
+                            type : 'value',
+                            name : '销量',
+                            axisLabel : {
+                                formatter: '{value} 个'
+                            }
+                        },
+                        {
+                            type : 'value',
+                            name : '价格',
+                            axisLabel : {
+                                formatter: '{value} 元'
+                            }
+                        }
+                    ],
+                    series : [
+                        {
+                            name:'销量',
+                            type:'bar',
+                            tooltip : {     // Data config.
+                                backgroundColor: 'blue',
+                                formatter: "{a}<br/>{b}:{c}"
+                            },
+                            data:[5, 20, 40, 10, 10, 20]
+                        },
+                        {
+                            name:'价格',
+                            type:'line',
+                            tooltip : {     // Data config.
+                                backgroundColor: 'blue',
+                                formatter: "{a0}  {b0}:{c0}"
+                            },
+                            yAxisIndex: 1,
+                            data:[100, 150, 200, 180, 150, 220]
+                        }
+                    ]
+                };
+                // 为echarts对象加载数据 
+                myChart.setOption(option); 
+			}
+	  	);
+	  </script>
+  </body>
+</html>
